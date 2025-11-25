@@ -1,11 +1,60 @@
 ---
-import Welcome from '../components/Welcome.astro';
+
+import Temperature from '../components/Temperature.astro';
+import LightLevel from '../components/LightLevel.astro';
+import SensorTrend from '../components/SensorTrend.astro';
 import Layout from '../layouts/Layout.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import { fetchData } from '../database/api';
+import type { SensorResponse, SensorReading } from '../types/sensor';
+
+const data = (await fetchData()) as SensorResponse;
+const readings = Array.isArray(data?.readings) ? data.readings : [];
+const chronologicalReadings: SensorReading[] = [...readings].sort(
+	(a, b) => a.timestamp - b.timestamp
+);
+
 ---
 
 <Layout>
-	<Welcome />
+	<div class="flex flex-col items-center w-full gap-10 px-4">
+		<h1 class="text-4xl text-center font-bold tracking-wide">Classroom Monitoring Platform</h1>
+
+		<div class="flex flex-col gap-2 items-center">
+			<h2 class="text-2xl tracking-wide">Real-time Monitoring</h2>
+			<div class="flex gap-2">
+				<Temperature />
+				<LightLevel />
+			</div>
+		</div>
+
+		<hr class="w-full text-gray-600 border border-dashed rounded-full"/>
+
+		<h2 class="text-2xl tracking-wide">Detailed Information</h2>
+
+		<div>
+			<h2 class="text-xl text-center">Temperature</h2>
+			<SensorTrend
+				title="Temperature trend"
+				metric="temp"
+				accentColor="#f97316"
+				readings={chronologicalReadings}
+				server:defer
+			/>
+		</div>
+
+		<div>
+			<h2 class="text-xl  text-center">Light</h2>
+			<SensorTrend
+				title="Light level trend"
+				metric="light"
+				accentColor="#c4b5fd"
+				readings={chronologicalReadings}
+				server:defer
+			/>
+		</div>
+	</div>
+	<div>
+		<pre>{JSON.stringify(data, null, 2)}</pre>	
+	</div>
 </Layout>

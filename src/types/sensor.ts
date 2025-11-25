@@ -1,0 +1,22 @@
+export type SensorReading = {
+  room_id: number;
+  temp: number;
+  humid: number;
+  co: number;
+  light: number;
+  timestamp: number;
+};
+
+export interface SensorResponse {
+  roomId: string;
+  readings: SensorReading[];
+}
+
+export type SensorMetric = 'temp' | 'humid' | 'co' | 'light';
+
+export const SENSOR_LABELS: Record<SensorMetric, string> = {
+  temp: 'Temperature (°C)',
+  humid: 'Humidity (%)',
+  co: 'CO (ppm)',
+  light: 'Light (lux)',
+};

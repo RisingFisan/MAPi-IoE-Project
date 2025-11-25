@@ -1,0 +1,25 @@
+---
+import chroma from 'chroma-js';
+
+import { Icon } from 'astro-icon/components';
+
+let temp = 30;
+
+const f = chroma.scale(['blue', 'yellow', 'red']).domain([0.25, 0.6, 1]);
+
+const percent = Math.min(Math.max(temp / 35, 0), 1);
+
+const tempColor = f(percent).alpha(0.6).css();
+
+---
+
+<div id="temp-widget" class="flex items-center gap-1 rounded-2xl border-2 border-gray-600 pl-2 pr-3">
+    <Icon name="material-symbols:thermometer" />
+    <p>{temp}ºC</p>
+</div>
+
+<style define:vars={{tempColor}}>
+    #temp-widget {
+        background-color: var(--tempColor);
+    }
+</style>
