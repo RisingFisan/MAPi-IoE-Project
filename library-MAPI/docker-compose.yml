@@ -1,0 +1,43 @@
+# Docker Compose file for MQTT Broker (Eclipse Mosquitto) and Node-RED - RUN ON RASPBERRY PI
+version: '3.8'
+
+services:
+  # MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"      # MQTT port
+      - "9001:9001"      # WebSocket port (optional)
+    volumes:
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - iot-network
+
+  # Node-RED
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered
+    restart: unless-stopped
+    ports:
+      - "1880:1880"      # Node-RED UI
+    volumes:
+      - nodered-data:/data
+    environment:
+      - TZ=Europe/Lisbon  # Change to your timezone
+    networks:
+      - iot-network
+    depends_on:
+      - mosquitto
+
+networks:
+  iot-network:
+    driver: bridge
+
+volumes:
+  mosquitto-data:
+  mosquitto-logs:
+  nodered-data:
