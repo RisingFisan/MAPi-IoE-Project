@@ -9,6 +9,7 @@ import { fetchData } from '../database/api';
 import type { SensorResponse, SensorReading } from '../types/sensor';
 
 const data = (await fetchData()) as SensorResponse;
+console.log(data);
 const readings = Array.isArray(data?.readings) ? data.readings : [];
 const chronologicalReadings: SensorReading[] = [...readings].sort(
 	(a, b) => a.timestamp - b.timestamp
@@ -39,7 +40,6 @@ const chronologicalReadings: SensorReading[] = [...readings].sort(
 				metric="temp"
 				accentColor="#f97316"
 				readings={chronologicalReadings}
-				server:defer
 			/>
 		</div>
 
@@ -50,7 +50,6 @@ const chronologicalReadings: SensorReading[] = [...readings].sort(
 				metric="light"
 				accentColor="#c4b5fd"
 				readings={chronologicalReadings}
-				server:defer
 			/>
 		</div>
 	</div>

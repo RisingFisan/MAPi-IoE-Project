@@ -2,8 +2,6 @@
 import type { SensorMetric, SensorReading } from '../types/sensor';
 import { SENSOR_LABELS } from '../types/sensor';
 
-const { default: initScript } = await import('../scripts/initSensorTrend.ts?url');
-
 interface Props {
   title?: string;
   readings: SensorReading[];
@@ -59,7 +57,9 @@ const chartPayload = JSON.stringify({
   )}
 </div>
 
-<script type="module" src={initScript} defer></script>
+<script>
+  import '../scripts/initSensorTrend.ts';
+</script>
 
 <style>
   .chart-card {
