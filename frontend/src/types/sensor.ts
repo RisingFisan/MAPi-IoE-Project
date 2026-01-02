@@ -17,6 +17,6 @@ export type SensorMetric = 'temp' | 'humid' | 'co' | 'light';
 export const SENSOR_LABELS: Record<SensorMetric, string> = {
   temp: 'Temperature (°C)',
   humid: 'Humidity (%)',
-  co: 'CO (ppm)',
-  light: 'Light (lux)',
+  co: 'CO (%)',
+  light: 'Light (%)',
 };

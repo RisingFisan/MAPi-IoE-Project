@@ -1,0 +1,25 @@
+---
+import chroma from 'chroma-js';
+
+import { Icon } from 'astro-icon/components';
+
+const { co } = Astro.props;
+
+const f = chroma.scale(['gray', 'red']).domain([0,0.02]);
+
+const percent = Math.min(Math.max(co / 100, 0), 1);
+
+const coColor = f(percent).alpha(0.6).css();
+
+---
+
+<div id="temp-widget" class="flex items-center gap-1 rounded-2xl border-2 border-gray-600 pl-2 pr-3">
+    <Icon name="material-symbols:thermostat-carbon" />
+    <p>{co}%</p>
+</div>
+
+<style define:vars={{coColor}}>
+    #temp-widget {
+        background-color: var(--coColor);
+    }
+</style>
