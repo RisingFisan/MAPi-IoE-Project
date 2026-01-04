@@ -3,7 +3,7 @@ import chroma from 'chroma-js';
 
 import { Icon } from 'astro-icon/components';
 
-let temp = 30;
+const { temp } = Astro.props;
 
 const f = chroma.scale(['blue', 'yellow', 'red']).domain([0.25, 0.6, 1]);
 
