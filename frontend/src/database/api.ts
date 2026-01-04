@@ -218,4 +218,3 @@ const defaultData = (roomId: number) => {
   ]
 }
 
-*/
