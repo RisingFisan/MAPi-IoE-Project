@@ -82,10 +82,21 @@ public:
   // Read carbon monoxide sensor as percentage (0-100)
   int readCarbonMonoxide();
 
+  // Initialize people count sensor with a Serial stream (e.g. &Serial1)
+  void beginPeopleCount(Stream *serial);
+
+  // Read people count from the configured serial stream
+  // Returns the last valid count, or -1 if not available/configured
+  int readPeopleCount();
+
 private:
   int _lightSensorPin;
   int _tempHumiditySensorPin;
   int _carbonMonoxideSensorPin;
+
+  // People count
+  Stream *_peopleCountSerial;
+  int _lastPeopleCount;
 
   // DHT11 instance created in begin()
   DHT11 *_dht;

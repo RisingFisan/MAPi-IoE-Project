@@ -1,0 +1,25 @@
+---
+import chroma from 'chroma-js';
+
+import { Icon } from 'astro-icon/components';
+
+const { count } = Astro.props;
+
+const f = chroma.scale(['white', 'blue']).domain([0, 10]);
+
+const percent = Math.min(Math.max(count / 10, 0), 1);
+
+const countColor = f(percent).alpha(0.6).css();
+
+---
+
+<div id="people-widget" class="flex items-center gap-1 rounded-2xl border-2 border-gray-600 pl-2 pr-3">
+    <Icon name="material-symbols:person" />
+    <p>{count}</p>
+</div>
+
+<style define:vars={{countColor}}>
+    #people-widget {
+        background-color: var(--countColor);
+    }
+</style>

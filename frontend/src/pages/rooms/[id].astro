@@ -11,6 +11,7 @@ import { Icon } from 'astro-icon/components';
 import { fetchRoomData } from '../../database/api';
 import type { SensorResponse, SensorReading } from '../../types/sensor';
 import CO from '@components/CO.astro';
+import PeopleCount from '@components/PeopleCount.astro';
 
 const { id } = Astro.params;
 
@@ -44,6 +45,7 @@ const chronologicalReadings: SensorReading[] = [...readings].sort(
 					<LightLevel light={chronologicalReadings.at(-1)?.light}/>
 					<Humidity humid={chronologicalReadings.at(-1)?.humid}/>
 					<CO co={chronologicalReadings.at(-1)?.co}/>
+					<PeopleCount count={chronologicalReadings.at(-1)?.people_count ?? 0}/>
 				}
 			</div>
 		</div>
@@ -92,6 +94,17 @@ const chronologicalReadings: SensorReading[] = [...readings].sort(
 					title="CO % trend"
 					metric="co"
 					accentColor="#714b24"
+					readings={chronologicalReadings}
+					server:defer
+				/>
+			</div>
+
+			<div>
+				<h4 class="text-xl text-center">People Count</h4>
+				<SensorTrend
+					title="People Count trend"
+					metric="people_count"
+					accentColor="#3b82f6"
 					readings={chronologicalReadings}
 					server:defer
 				/>

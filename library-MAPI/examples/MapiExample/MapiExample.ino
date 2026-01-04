@@ -17,7 +17,9 @@ Mapi sensors(LIGHT_PIN, DHT_PIN, CO_PIN);
 void setup()
 {
     Serial.begin(9600);
+    Serial1.begin(9600); // Initialize Serial1 for people count sensor
     sensors.begin();
+    sensors.beginPeopleCount(&Serial1); // Register Serial1 for people count
     delay(1000);
     Serial.println("Mapi example started");
 
@@ -35,7 +37,8 @@ void setup()
     {
         Serial.print("WiFi failed, status=");
         Serial.println(st);
-        while (true){
+        while (true)
+        {
             delay(1000);
         }
     }
@@ -79,6 +82,14 @@ void loop()
     Serial.print("CO (approx): ");
     Serial.print(coPct);
     Serial.println(" %");
+
+    // Read People Count
+    int people = sensors.readPeopleCount();
+    if (people >= 0)
+    {
+        Serial.print("People Count: ");
+        Serial.println(people);
+    }
 
     Serial.println("----");
     delay(2000);

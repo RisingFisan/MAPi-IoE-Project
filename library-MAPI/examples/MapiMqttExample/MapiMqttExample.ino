@@ -54,6 +54,7 @@ bool DUMMY = true;
 void setup()
 {
     Serial.begin(9600);
+    Serial1.begin(9600); // Initialize Serial1 for people count sensor
     while (!Serial)
     {
         ; // Wait for serial port to connect (needed for native USB)
@@ -65,6 +66,7 @@ void setup()
 
     // Initialize sensors
     sensors.begin();
+    sensors.beginPeopleCount(&Serial1); // Register Serial1 for people count
     delay(1000);
 
     // ==================== Connect to WiFi ====================
@@ -147,6 +149,7 @@ void loop()
         int temperature = 0;
         int humidity = 0;
         int coPct = 0;
+        int peopleCount = -1;
         int result = 0;
 
         if (DUMMY)
@@ -160,6 +163,7 @@ void loop()
             temperature = 22 + (tick % 6); // 22-27 °C
             humidity = 45 + (tick % 15);   // 45-59 %
             coPct = 5 + (tick % 8);        // 5-12 %
+            peopleCount = (tick % 10);     // 0-9 people
         }
         else
         {
@@ -174,6 +178,9 @@ void loop()
 
             // Read and display CO sensor
             coPct = sensors.readCarbonMonoxide();
+
+            // Read people count
+            peopleCount = sensors.readPeopleCount();
         }
 
         Serial.print("Light: ");
@@ -200,6 +207,12 @@ void loop()
         Serial.print(coPct);
         Serial.println(" %");
 
+        if (peopleCount >= 0)
+        {
+            Serial.print("People Count: ");
+            Serial.println(peopleCount);
+        }
+
         // Publish all sensor data as JSON to MQTT
         Serial.print("\n[MQTT] Publishing to topic: ");
         Serial.println(MQTT_TOPIC);
@@ -216,6 +229,11 @@ void loop()
             payload += String(humidity);
             payload += ",\"co\":";
             payload += String(coPct);
+            if (peopleCount >= 0)
+            {
+                payload += ",\"people_count\":";
+                payload += String(peopleCount);
+            }
             payload += ",\"timestamp\":";
             payload += String(millis());
             payload += "}";

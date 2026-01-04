@@ -16,7 +16,7 @@ app.get('/rooms/:roomId/sensor', async (req, res) => {
 
   try {
     const sql = `
-      SELECT room_id, temp, humid, co, light, timestamp
+      SELECT room_id, temp, humid, co, light, people_count, timestamp
       FROM sensors
       WHERE room_id = ?
       ORDER BY timestamp DESC

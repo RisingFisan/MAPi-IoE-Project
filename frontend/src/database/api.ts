@@ -1,5 +1,5 @@
 
-const API_ADDR = '192.168.4.23:3000';
+const API_ADDR = 'mapi-api:3000';
 
 export const fetchRoomData = async (roomId: number) => {
   let data = defaultData(roomId);
@@ -52,6 +52,7 @@ const defaultData = (roomId: number) => {
       "humid": 66,
       "co": 17,
       "light": 11,
+      "people_count": 3,
       "timestamp": 2083187
     },
     {
@@ -60,6 +61,7 @@ const defaultData = (roomId: number) => {
       "humid": 66,
       "co": 17,
       "light": 11,
+      "people_count": 2,
       "timestamp": 2078166
     },
     {
@@ -68,6 +70,7 @@ const defaultData = (roomId: number) => {
       "humid": 66,
       "co": 17,
       "light": 11,
+      "people_count": 4,
       "timestamp": 2073128
     },
     {
@@ -76,6 +79,7 @@ const defaultData = (roomId: number) => {
       "humid": 66,
       "co": 17,
       "light": 12,
+      "people_count": 5,
       "timestamp": 2068103
     },
     {
@@ -84,6 +88,7 @@ const defaultData = (roomId: number) => {
       "humid": 66,
       "co": 17,
       "light": 10,
+      "people_count": 3,
       "timestamp": 2063074
     },
     {
@@ -92,6 +97,7 @@ const defaultData = (roomId: number) => {
       "humid": 66,
       "co": 17,
       "light": 10,
+      "people_count": 2,
       "timestamp": 2058024
     },
     {
@@ -100,6 +106,7 @@ const defaultData = (roomId: number) => {
       "humid": 67,
       "co": 17,
       "light": 11,
+      "people_count": 1,
       "timestamp": 2053008
     },
     {
@@ -108,6 +115,7 @@ const defaultData = (roomId: number) => {
       "humid": 67,
       "co": 17,
       "light": 10,
+      "people_count": 0,
       "timestamp": 2047985
     },
     {
@@ -116,6 +124,7 @@ const defaultData = (roomId: number) => {
       "humid": 67,
       "co": 17,
       "light": 11,
+      "people_count": 2,
       "timestamp": 2042968
     },
     {
@@ -124,97 +133,12 @@ const defaultData = (roomId: number) => {
       "humid": 67,
       "co": 17,
       "light": 10,
+      "people_count": 3,
       "timestamp": 2037964
     }
   ]
 }
             `)
 }
-/*
 
-{
-  "roomId": "1",
-  "readings": [
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 66,
-      "co": 17,
-      "light": 11,
-      "timestamp": 2083187
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 66,
-      "co": 17,
-      "light": 11,
-      "timestamp": 2078166
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 66,
-      "co": 17,
-      "light": 11,
-      "timestamp": 2073128
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 66,
-      "co": 17,
-      "light": 12,
-      "timestamp": 2068103
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 66,
-      "co": 17,
-      "light": 10,
-      "timestamp": 2063074
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 66,
-      "co": 17,
-      "light": 10,
-      "timestamp": 2058024
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 67,
-      "co": 17,
-      "light": 11,
-      "timestamp": 2053008
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 67,
-      "co": 17,
-      "light": 10,
-      "timestamp": 2047985
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 67,
-      "co": 17,
-      "light": 11,
-      "timestamp": 2042968
-    },
-    {
-      "room_id": 1,
-      "temp": 23,
-      "humid": 67,
-      "co": 17,
-      "light": 10,
-      "timestamp": 2037964
-    }
-  ]
-}
 

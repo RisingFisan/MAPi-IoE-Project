@@ -21,6 +21,7 @@ const sensorsTableSql = `
     humid INT NOT NULL,
     co INT NOT NULL,
     light INT NOT NULL,
+    people_count INT NOT NULL DEFAULT 0,
     timestamp INT NOT NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 `;

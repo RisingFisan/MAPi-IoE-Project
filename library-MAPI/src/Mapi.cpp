@@ -17,6 +17,8 @@ Mapi::Mapi(int lightSensorPin, int tempHumSensorPin, int carbonMonoxideSensorPin
     _wifiClient = nullptr;
     _mqttClient = nullptr;
     _mqttPort = 1883;
+    _peopleCountSerial = nullptr;
+    _lastPeopleCount = -1;
 }
 
 // -------------------- WiFi helper implementations --------------------
@@ -164,6 +166,29 @@ int Mapi::readCarbonMonoxide()
     return pct;
 }
 
+void Mapi::beginPeopleCount(Stream *serial)
+{
+    _peopleCountSerial = serial;
+}
+
+int Mapi::readPeopleCount()
+{
+    if (!_peopleCountSerial)
+        return -1;
+
+    while (_peopleCountSerial->available())
+    {
+        String line = _peopleCountSerial->readStringUntil('\n');
+        line.trim();
+        if (line.startsWith("DATA:"))
+        {
+            String countStr = line.substring(5);
+            _lastPeopleCount = countStr.toInt();
+        }
+    }
+    return _lastPeopleCount;
+}
+
 // -------------------- MQTT helper implementations --------------------
 
 void Mapi::mqttBegin(const char *broker, int port, const char *clientId)
@@ -298,6 +323,7 @@ bool Mapi::mqttPublishSensorData(const char *topic, bool includeCO)
     int temperature = std::get<1>(thResult);
     int humidity = std::get<2>(thResult);
     int co = includeCO ? readCarbonMonoxide() : 0;
+    int peopleCount = readPeopleCount();
 
     // Build JSON payload
     String payload = "{";
@@ -316,6 +342,12 @@ bool Mapi::mqttPublishSensorData(const char *topic, bool includeCO)
     {
         payload += ",\"co\":";
         payload += String(co);
+    }
+
+    if (peopleCount >= 0)
+    {
+        payload += ",\"people_count\":";
+        payload += String(peopleCount);
     }
 
     // Add timestamp (millis since boot)

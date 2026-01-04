@@ -6,10 +6,10 @@
 #include <stdlib.h>
 
 /* Constant variables ------------------------------------------------------- */
-#define EI_CAMERA_RAW_FRAME_BUFFER_COLS     160
-#define EI_CAMERA_RAW_FRAME_BUFFER_ROWS     120
+#define EI_CAMERA_RAW_FRAME_BUFFER_COLS 160
+#define EI_CAMERA_RAW_FRAME_BUFFER_ROWS 120
 
-#define DWORD_ALIGN_PTR(a)   ((a & 0x3) ?(((uintptr_t)a + 0x4) & ~(uintptr_t)0x3) : a)
+#define DWORD_ALIGN_PTR(a) ((a & 0x3) ? (((uintptr_t)a + 0x4) & ~(uintptr_t)0x3) : a)
 
 /*
  ** NOTE: If you run into TFLite arena allocation issue.
@@ -26,44 +26,46 @@
  ** If the problem persists then there's not enough memory for this model and application.
  */
 
-class OV7675 : public OV767X {
-    public:
-        int begin(int resolution, int format, int fps);
-        void readFrame(void* buffer);
+class OV7675 : public OV767X
+{
+public:
+    int begin(int resolution, int format, int fps);
+    void readFrame(void *buffer);
 
-    private:
-        int vsyncPin;
-        int hrefPin;
-        int pclkPin;
-        int xclkPin;
+private:
+    int vsyncPin;
+    int hrefPin;
+    int pclkPin;
+    int xclkPin;
 
-        volatile uint32_t* vsyncPort;
-        uint32_t vsyncMask;
-        volatile uint32_t* hrefPort;
-        uint32_t hrefMask;
-        volatile uint32_t* pclkPort;
-        uint32_t pclkMask;
+    volatile uint32_t *vsyncPort;
+    uint32_t vsyncMask;
+    volatile uint32_t *hrefPort;
+    uint32_t hrefMask;
+    volatile uint32_t *pclkPort;
+    uint32_t pclkMask;
 
-        uint16_t width;
-        uint16_t height;
-        uint8_t bytes_per_pixel;
-        uint16_t bytes_per_row;
-        uint8_t buf_rows;
-        uint16_t buf_size;
-        uint8_t resize_height;
-        uint8_t *raw_buf;
-        void *buf_mem;
-        uint8_t *intrp_buf;
-        uint8_t *buf_limit;
+    uint16_t width;
+    uint16_t height;
+    uint8_t bytes_per_pixel;
+    uint16_t bytes_per_row;
+    uint8_t buf_rows;
+    uint16_t buf_size;
+    uint8_t resize_height;
+    uint8_t *raw_buf;
+    void *buf_mem;
+    uint8_t *intrp_buf;
+    uint8_t *buf_limit;
 
-        void readBuf();
-        int allocate_scratch_buffs();
-        int deallocate_scratch_buffs();
+    void readBuf();
+    int allocate_scratch_buffs();
+    int deallocate_scratch_buffs();
 };
 
-typedef struct {
-	size_t width;
-	size_t height;
+typedef struct
+{
+    size_t width;
+    size_t height;
 } ei_device_resize_resolutions_t;
 
 /**
@@ -71,7 +73,8 @@ typedef struct {
  *
  * @return     Returns number of available bytes
  */
-int ei_get_serial_available(void) {
+int ei_get_serial_available(void)
+{
     return Serial.available();
 }
 
@@ -80,13 +83,18 @@ int ei_get_serial_available(void) {
  *
  * @return     byte
  */
-char ei_get_serial_byte(void) {
+char ei_get_serial_byte(void)
+{
     return Serial.read();
 }
 
 /* Private variables ------------------------------------------------------- */
 static OV7675 Cam;
 static bool is_initialised = false;
+
+// Define SoftwareSerial-like interface using hardware UART on D11 (RX) and D12 (TX)
+// Note: D11 is RX, D12 is TX in this configuration to match SoftwareSerial(rx, tx) convention
+UART softSerial(digitalPinToPinName(12), digitalPinToPinName(11), NC, NC);
 
 /*
 ** @brief points to the output of the capture
@@ -106,20 +114,22 @@ int history_index = 0;
 /* Function definitions ------------------------------------------------------- */
 bool ei_camera_init(void);
 void ei_camera_deinit(void);
-bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf) ;
+bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf);
 int calculate_resize_dimensions(uint32_t out_width, uint32_t out_height, uint32_t *resize_col_sz, uint32_t *resize_row_sz, bool *do_resize);
 void resizeImage(int srcWidth, int srcHeight, uint8_t *srcImage, int dstWidth, int dstHeight, uint8_t *dstImage, int iBpp);
 void cropImage(int srcWidth, int srcHeight, uint8_t *srcImage, int startX, int startY, int dstWidth, int dstHeight, uint8_t *dstImage, int iBpp);
 
 /**
-* @brief      Arduino setup function
-*/
+ * @brief      Arduino setup function
+ */
 void setup()
 {
     // put your setup code here, to run once:
     Serial.begin(115200);
+    softSerial.begin(9600);
     // comment out the below line to cancel the wait for USB connection (needed for native USB)
-    while (!Serial);
+    while (!Serial)
+        ;
 
     // summary of inferencing settings (from model_metadata.h)
     ei_printf("Inferencing settings:\n");
@@ -129,25 +139,28 @@ void setup()
 }
 
 /**
-* @brief      Get data and run inferencing
-*
-* @param[in]  debug  Get debug info if true
-*/
+ * @brief      Get data and run inferencing
+ *
+ * @param[in]  debug  Get debug info if true
+ */
 void loop()
 {
     bool stop_inferencing = false;
 
-    while(stop_inferencing == false) {
+    while (stop_inferencing == false)
+    {
         ei_printf("\nStarting inferencing in 1 seconds...\n");
 
         // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
-        if (ei_sleep(1000) != EI_IMPULSE_OK) {
+        if (ei_sleep(1000) != EI_IMPULSE_OK)
+        {
             break;
         }
 
         ei_printf("Taking photo...\n");
 
-        if (ei_camera_init() == false) {
+        if (ei_camera_init() == false)
+        {
             ei_printf("ERR: Failed to initialize image sensor\r\n");
             break;
         }
@@ -157,23 +170,27 @@ void loop()
         uint32_t resize_row_sz;
         bool do_resize = false;
         int res = calculate_resize_dimensions(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, &resize_col_sz, &resize_row_sz, &do_resize);
-        if (res) {
+        if (res)
+        {
             ei_printf("ERR: Failed to calculate resize dimensions (%d)\r\n", res);
             break;
         }
 
         void *snapshot_mem = NULL;
         uint8_t *snapshot_buf = NULL;
-        snapshot_mem = ei_malloc(resize_col_sz*resize_row_sz*2);
-        if(snapshot_mem == NULL) {
+        snapshot_mem = ei_malloc(resize_col_sz * resize_row_sz * 2);
+        if (snapshot_mem == NULL)
+        {
             ei_printf("failed to create snapshot_mem\r\n");
             break;
         }
         snapshot_buf = (uint8_t *)DWORD_ALIGN_PTR((uintptr_t)snapshot_mem);
 
-        if (ei_camera_capture(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, snapshot_buf) == false) {
+        if (ei_camera_capture(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT, snapshot_buf) == false)
+        {
             ei_printf("Failed to capture image\r\n");
-            if (snapshot_mem) ei_free(snapshot_mem);
+            if (snapshot_mem)
+                ei_free(snapshot_mem);
             break;
         }
 
@@ -182,10 +199,11 @@ void loop()
         signal.get_data = &ei_camera_cutout_get_data;
 
         // run the impulse: DSP, neural network and the Anomaly algorithm
-        ei_impulse_result_t result = { 0 };
+        ei_impulse_result_t result = {0};
 
         EI_IMPULSE_ERROR ei_error = run_classifier(&signal, &result, debug_nn);
-        if (ei_error != EI_IMPULSE_OK) {
+        if (ei_error != EI_IMPULSE_OK)
+        {
             ei_printf("Failed to run impulse (%d)\n", ei_error);
             ei_free(snapshot_mem);
             break;
@@ -201,44 +219,54 @@ void loop()
         int valid_people_count = 0;
 
         // 2. Loop through EVERY single candidate to see why some are rejected
-        for (uint32_t i = 0; i < result.bounding_boxes_count; i++) {
+        for (uint32_t i = 0; i < result.bounding_boxes_count; i++)
+        {
             ei_impulse_result_bounding_box_t bb = result.bounding_boxes[i];
-            
+
             // Print every single box, even low confidence ones
-            ei_printf("   [Candidate %d] Label: %s | Confidence: %f | X: %d, Y: %d\r\n", 
+            ei_printf("   [Candidate %d] Label: %s | Confidence: %f | X: %d, Y: %d\r\n",
                       i, bb.label, bb.value, bb.x, bb.y);
 
             // Now apply your logic (Lowered threshold to 0.4 based on previous advice)
-            if (bb.value >= 0.4 && strcmp(bb.label, "person") == 0) {
+            if (bb.value >= 0.4 && strcmp(bb.label, "person") == 0)
+            {
                 valid_people_count++;
             }
         }
-        
+
         ei_printf("   -> Final Valid People Count: %d\r\n", valid_people_count);
-        
+
         // Update history with the filtered count
         count_history[history_index] = valid_people_count;
         history_index = (history_index + 1) % HISTORY_SIZE;
 
         int sum = 0;
-        for (int i = 0; i < HISTORY_SIZE; i++) {
+        for (int i = 0; i < HISTORY_SIZE; i++)
+        {
             sum += count_history[i];
         }
-        int smoothed_count = sum / HISTORY_SIZE;  // Integer division floors the result
+        int smoothed_count = sum / HISTORY_SIZE; // Integer division floors the result
 
         // 4. Print Result
         ei_printf("Raw: %d | Smoothed Count: %d\n", valid_people_count, smoothed_count);
         Serial.print("DATA:");
         Serial.println(smoothed_count);
 
-        while (ei_get_serial_available() > 0) {
-            if (ei_get_serial_byte() == 'b') {
+        // Send to main Arduino
+        softSerial.print("DATA:");
+        softSerial.println(smoothed_count);
+
+        while (ei_get_serial_available() > 0)
+        {
+            if (ei_get_serial_byte() == 'b')
+            {
                 ei_printf("Inferencing stopped by user\r\n");
                 stop_inferencing = true;
             }
         }
         delay(1000);
-        if (snapshot_mem) ei_free(snapshot_mem);
+        if (snapshot_mem)
+            ei_free(snapshot_mem);
     }
 #endif
     ei_camera_deinit();
@@ -257,15 +285,17 @@ void loop()
 int calculate_resize_dimensions(uint32_t out_width, uint32_t out_height, uint32_t *resize_col_sz, uint32_t *resize_row_sz, bool *do_resize)
 {
     size_t list_size = 2;
-    const ei_device_resize_resolutions_t list[list_size] = { {42,32}, {128,96} };
+    const ei_device_resize_resolutions_t list[list_size] = {{42, 32}, {128, 96}};
 
     // (default) conditions
     *resize_col_sz = EI_CAMERA_RAW_FRAME_BUFFER_COLS;
     *resize_row_sz = EI_CAMERA_RAW_FRAME_BUFFER_ROWS;
     *do_resize = false;
 
-    for (size_t ix = 0; ix < list_size; ix++) {
-        if ((out_width <= list[ix].width) && (out_height <= list[ix].height)) {
+    for (size_t ix = 0; ix < list_size; ix++)
+    {
+        if ((out_width <= list[ix].width) && (out_height <= list[ix].height))
+        {
             *resize_col_sz = list[ix].width;
             *resize_row_sz = list[ix].height;
             *do_resize = true;
@@ -281,10 +311,13 @@ int calculate_resize_dimensions(uint32_t out_width, uint32_t out_height, uint32_
  *
  * @retval  false if initialisation failed
  */
-bool ei_camera_init(void) {
-    if (is_initialised) return true;
+bool ei_camera_init(void)
+{
+    if (is_initialised)
+        return true;
 
-    if (!Cam.begin(QQVGA, RGB565, 1)) { // VGA downsampled to QQVGA (OV7675)
+    if (!Cam.begin(QQVGA, RGB565, 1))
+    { // VGA downsampled to QQVGA (OV7675)
         ei_printf("ERR: Failed to initialize camera\r\n");
         return false;
     }
@@ -296,8 +329,10 @@ bool ei_camera_init(void) {
 /**
  * @brief      Stop streaming of sensor data
  */
-void ei_camera_deinit(void) {
-    if (is_initialised) {
+void ei_camera_deinit(void)
+{
+    if (is_initialised)
+    {
         Cam.end();
         is_initialised = false;
     }
@@ -316,31 +351,35 @@ void ei_camera_deinit(void) {
  */
 bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf)
 {
-    if (!is_initialised) {
+    if (!is_initialised)
+    {
         ei_printf("ERR: Camera is not initialized\r\n");
         return false;
     }
 
-    if (!out_buf) {
+    if (!out_buf)
+    {
         ei_printf("ERR: invalid parameters\r\n");
         return false;
     }
 
     // choose resize dimensions
     int res = calculate_resize_dimensions(img_width, img_height, &resize_col_sz, &resize_row_sz, &do_resize);
-    if (res) {
+    if (res)
+    {
         ei_printf("ERR: Failed to calculate resize dimensions (%d)\r\n", res);
         return false;
     }
 
-    if ((img_width != resize_col_sz)
-        || (img_height != resize_row_sz)) {
+    if ((img_width != resize_col_sz) || (img_height != resize_row_sz))
+    {
         do_crop = true;
     }
 
     Cam.readFrame(out_buf); // captures image and resizes
 
-    if (do_crop) {
+    if (do_crop)
+    {
         uint32_t crop_col_sz;
         uint32_t crop_row_sz;
         uint32_t crop_col_start;
@@ -350,20 +389,20 @@ bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf
         crop_col_sz = img_width;
         crop_row_sz = img_height;
 
-        //ei_printf("crop cols: %d, rows: %d\r\n", crop_col_sz,crop_row_sz);
+        // ei_printf("crop cols: %d, rows: %d\r\n", crop_col_sz,crop_row_sz);
         cropImage(resize_col_sz, resize_row_sz,
-                out_buf,
-                crop_col_start, crop_row_start,
-                crop_col_sz, crop_row_sz,
-                out_buf,
-                16);
+                  out_buf,
+                  crop_col_start, crop_row_start,
+                  crop_col_sz, crop_row_sz,
+                  out_buf,
+                  16);
     }
 
     // The following variables should always be assigned
     // if this routine is to return true
     // cutout values
-    //ei_camera_snapshot_is_resized = do_resize;
-    //ei_camera_snapshot_is_cropped = do_crop;
+    // ei_camera_snapshot_is_resized = do_resize;
+    // ei_camera_snapshot_is_cropped = do_crop;
     ei_camera_capture_out = out_buf;
 
     return true;
@@ -376,15 +415,17 @@ bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf
  * @param[in]   length       number of pixels to convert
  * @param[out]  out_buf      pointer to store output image
  */
-int ei_camera_cutout_get_data(size_t offset, size_t length, float *out_ptr) {
+int ei_camera_cutout_get_data(size_t offset, size_t length, float *out_ptr)
+{
     size_t pixel_ix = offset * 2;
     size_t bytes_left = length;
     size_t out_ptr_ix = 0;
 
     // read byte for byte
-    while (bytes_left != 0) {
+    while (bytes_left != 0)
+    {
         // grab the value and convert to r/g/b
-        uint16_t pixel = (ei_camera_capture_out[pixel_ix] << 8) | ei_camera_capture_out[pixel_ix+1];
+        uint16_t pixel = (ei_camera_capture_out[pixel_ix] << 8) | ei_camera_capture_out[pixel_ix + 1];
         uint8_t r, g, b;
         r = ((pixel >> 11) & 0x1f) << 3;
         g = ((pixel >> 5) & 0x3f) << 2;
@@ -396,7 +437,7 @@ int ei_camera_cutout_get_data(size_t offset, size_t length, float *out_ptr) {
 
         // and go to the next pixel
         out_ptr_ix++;
-        pixel_ix+=2;
+        pixel_ix += 2;
         bytes_left--;
     }
 
@@ -411,7 +452,7 @@ int ei_camera_cutout_get_data(size_t offset, size_t length, float *out_ptr) {
 #endif
 // This needs to be < 16 or it won't fit. Cortex-M4 only has SIMD for signed multiplies
 #define FRAC_BITS 14
-#define FRAC_VAL (1<<FRAC_BITS)
+#define FRAC_VAL (1 << FRAC_BITS)
 #define FRAC_MASK (FRAC_VAL - 1)
 //
 // Resize
@@ -431,7 +472,7 @@ void resizeImage(int srcWidth, int srcHeight, uint8_t *srcImage, int dstWidth, i
 
     if (iBpp != 8 && iBpp != 16)
         return;
-    src_y_accum = FRAC_VAL/2; // start at 1/2 pixel in to account for integer downsampling which might miss pixels
+    src_y_accum = FRAC_VAL / 2; // start at 1/2 pixel in to account for integer downsampling which might miss pixels
     const uint32_t src_x_frac = (srcWidth * FRAC_VAL) / dstWidth;
     const uint32_t src_y_frac = (srcHeight * FRAC_VAL) / dstHeight;
     const uint32_t r_mask = 0xf800f800;
@@ -440,90 +481,110 @@ void resizeImage(int srcWidth, int srcHeight, uint8_t *srcImage, int dstWidth, i
     uint8_t *s, *d;
     uint16_t *s16, *d16;
     uint32_t x_frac2, y_frac2; // for 16-bit SIMD
-    for (y=0; y < dstHeight; y++) {
+    for (y = 0; y < dstHeight; y++)
+    {
         ty = src_y_accum >> FRAC_BITS; // src y
         y_frac = src_y_accum & FRAC_MASK;
         src_y_accum += src_y_frac;
-        ny_frac = FRAC_VAL - y_frac; // y fraction and 1.0 - y fraction
+        ny_frac = FRAC_VAL - y_frac;        // y fraction and 1.0 - y fraction
         y_frac2 = ny_frac | (y_frac << 16); // for M4/M4 SIMD
         s = &srcImage[ty * srcWidth];
         s16 = (uint16_t *)&srcImage[ty * srcWidth * 2];
         d = &dstImage[y * dstWidth];
         d16 = (uint16_t *)&dstImage[y * dstWidth * 2];
-        src_x_accum = FRAC_VAL/2; // start at 1/2 pixel in to account for integer downsampling which might miss pixels
-        if (iBpp == 8) {
-        for (x=0; x < dstWidth; x++) {
-            uint32_t tx, p00,p01,p10,p11;
-            tx = src_x_accum >> FRAC_BITS;
-            x_frac = src_x_accum & FRAC_MASK;
-            nx_frac = FRAC_VAL - x_frac; // x fraction and 1.0 - x fraction
-            x_frac2 = nx_frac | (x_frac << 16);
-            src_x_accum += src_x_frac;
-            p00 = s[tx]; p10 = s[tx+1];
-            p01 = s[tx+srcWidth]; p11 = s[tx+srcWidth+1];
-    #ifdef __ARM_FEATURE_SIMD32
-            p00 = __SMLAD(p00 | (p10<<16), x_frac2, FRAC_VAL/2) >> FRAC_BITS; // top line
-            p01 = __SMLAD(p01 | (p11<<16), x_frac2, FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            p00 = __SMLAD(p00 | (p01<<16), y_frac2, FRAC_VAL/2) >> FRAC_BITS; // combine
-    #else // generic C code
-            p00 = ((p00 * nx_frac) + (p10 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // top line
-            p01 = ((p01 * nx_frac) + (p11 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            p00 = ((p00 * ny_frac) + (p01 * y_frac) + FRAC_VAL/2) >> FRAC_BITS; // combine top + bottom
-    #endif // Cortex-M4/M7
-            *d++ = (uint8_t)p00; // store new pixel
-        } // for x
+        src_x_accum = FRAC_VAL / 2; // start at 1/2 pixel in to account for integer downsampling which might miss pixels
+        if (iBpp == 8)
+        {
+            for (x = 0; x < dstWidth; x++)
+            {
+                uint32_t tx, p00, p01, p10, p11;
+                tx = src_x_accum >> FRAC_BITS;
+                x_frac = src_x_accum & FRAC_MASK;
+                nx_frac = FRAC_VAL - x_frac; // x fraction and 1.0 - x fraction
+                x_frac2 = nx_frac | (x_frac << 16);
+                src_x_accum += src_x_frac;
+                p00 = s[tx];
+                p10 = s[tx + 1];
+                p01 = s[tx + srcWidth];
+                p11 = s[tx + srcWidth + 1];
+#ifdef __ARM_FEATURE_SIMD32
+                p00 = __SMLAD(p00 | (p10 << 16), x_frac2, FRAC_VAL / 2) >> FRAC_BITS; // top line
+                p01 = __SMLAD(p01 | (p11 << 16), x_frac2, FRAC_VAL / 2) >> FRAC_BITS; // bottom line
+                p00 = __SMLAD(p00 | (p01 << 16), y_frac2, FRAC_VAL / 2) >> FRAC_BITS; // combine
+#else                                                                                 // generic C code
+                    p00 = ((p00 * nx_frac) + (p10 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // top line
+                    p01 = ((p01 * nx_frac) + (p11 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // bottom line
+                    p00 = ((p00 * ny_frac) + (p01 * y_frac) + FRAC_VAL / 2) >> FRAC_BITS; // combine top + bottom
+#endif                                                                                // Cortex-M4/M7
+                *d++ = (uint8_t)p00;                                                  // store new pixel
+            } // for x
         } // 8-bpp
         else
         { // RGB565
-        for (x=0; x < dstWidth; x++) {
-            uint32_t tx, p00,p01,p10,p11;
-            uint32_t r00, r01, r10, r11, g00, g01, g10, g11, b00, b01, b10, b11;
-            tx = src_x_accum >> FRAC_BITS;
-            x_frac = src_x_accum & FRAC_MASK;
-            nx_frac = FRAC_VAL - x_frac; // x fraction and 1.0 - x fraction
-            x_frac2 = nx_frac | (x_frac << 16);
-            src_x_accum += src_x_frac;
-            p00 = __builtin_bswap16(s16[tx]); p10 = __builtin_bswap16(s16[tx+1]);
-            p01 = __builtin_bswap16(s16[tx+srcWidth]); p11 = __builtin_bswap16(s16[tx+srcWidth+1]);
-    #ifdef __ARM_FEATURE_SIMD32
+            for (x = 0; x < dstWidth; x++)
             {
-            p00 |= (p10 << 16);
-            p01 |= (p11 << 16);
-            r00 = (p00 & r_mask) >> 1; g00 = p00 & g_mask; b00 = p00 & b_mask;
-            r01 = (p01 & r_mask) >> 1; g01 = p01 & g_mask; b01 = p01 & b_mask;
-            r00 = __SMLAD(r00, x_frac2, FRAC_VAL/2) >> FRAC_BITS; // top line
-            r01 = __SMLAD(r01, x_frac2, FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            r00 = __SMLAD(r00 | (r01<<16), y_frac2, FRAC_VAL/2) >> FRAC_BITS; // combine
-            g00 = __SMLAD(g00, x_frac2, FRAC_VAL/2) >> FRAC_BITS; // top line
-            g01 = __SMLAD(g01, x_frac2, FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            g00 = __SMLAD(g00 | (g01<<16), y_frac2, FRAC_VAL/2) >> FRAC_BITS; // combine
-            b00 = __SMLAD(b00, x_frac2, FRAC_VAL/2) >> FRAC_BITS; // top line
-            b01 = __SMLAD(b01, x_frac2, FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            b00 = __SMLAD(b00 | (b01<<16), y_frac2, FRAC_VAL/2) >> FRAC_BITS; // combine
-            }
-    #else // generic C code
-            {
-            r00 = (p00 & r_mask) >> 1; g00 = p00 & g_mask; b00 = p00 & b_mask;
-            r10 = (p10 & r_mask) >> 1; g10 = p10 & g_mask; b10 = p10 & b_mask;
-            r01 = (p01 & r_mask) >> 1; g01 = p01 & g_mask; b01 = p01 & b_mask;
-            r11 = (p11 & r_mask) >> 1; g11 = p11 & g_mask; b11 = p11 & b_mask;
-            r00 = ((r00 * nx_frac) + (r10 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // top line
-            r01 = ((r01 * nx_frac) + (r11 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            r00 = ((r00 * ny_frac) + (r01 * y_frac) + FRAC_VAL/2) >> FRAC_BITS; // combine top + bottom
-            g00 = ((g00 * nx_frac) + (g10 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // top line
-            g01 = ((g01 * nx_frac) + (g11 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            g00 = ((g00 * ny_frac) + (g01 * y_frac) + FRAC_VAL/2) >> FRAC_BITS; // combine top + bottom
-            b00 = ((b00 * nx_frac) + (b10 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // top line
-            b01 = ((b01 * nx_frac) + (b11 * x_frac) + FRAC_VAL/2) >> FRAC_BITS; // bottom line
-            b00 = ((b00 * ny_frac) + (b01 * y_frac) + FRAC_VAL/2) >> FRAC_BITS; // combine top + bottom
-            }
-    #endif // Cortex-M4/M7
-            r00 = (r00 << 1) & r_mask;
-            g00 = g00 & g_mask;
-            b00 = b00 & b_mask;
-            p00 = (r00 | g00 | b00); // re-combine color components
-            *d16++ = (uint16_t)__builtin_bswap16(p00); // store new pixel
-        } // for x
+                uint32_t tx, p00, p01, p10, p11;
+                uint32_t r00, r01, r10, r11, g00, g01, g10, g11, b00, b01, b10, b11;
+                tx = src_x_accum >> FRAC_BITS;
+                x_frac = src_x_accum & FRAC_MASK;
+                nx_frac = FRAC_VAL - x_frac; // x fraction and 1.0 - x fraction
+                x_frac2 = nx_frac | (x_frac << 16);
+                src_x_accum += src_x_frac;
+                p00 = __builtin_bswap16(s16[tx]);
+                p10 = __builtin_bswap16(s16[tx + 1]);
+                p01 = __builtin_bswap16(s16[tx + srcWidth]);
+                p11 = __builtin_bswap16(s16[tx + srcWidth + 1]);
+#ifdef __ARM_FEATURE_SIMD32
+                {
+                    p00 |= (p10 << 16);
+                    p01 |= (p11 << 16);
+                    r00 = (p00 & r_mask) >> 1;
+                    g00 = p00 & g_mask;
+                    b00 = p00 & b_mask;
+                    r01 = (p01 & r_mask) >> 1;
+                    g01 = p01 & g_mask;
+                    b01 = p01 & b_mask;
+                    r00 = __SMLAD(r00, x_frac2, FRAC_VAL / 2) >> FRAC_BITS;               // top line
+                    r01 = __SMLAD(r01, x_frac2, FRAC_VAL / 2) >> FRAC_BITS;               // bottom line
+                    r00 = __SMLAD(r00 | (r01 << 16), y_frac2, FRAC_VAL / 2) >> FRAC_BITS; // combine
+                    g00 = __SMLAD(g00, x_frac2, FRAC_VAL / 2) >> FRAC_BITS;               // top line
+                    g01 = __SMLAD(g01, x_frac2, FRAC_VAL / 2) >> FRAC_BITS;               // bottom line
+                    g00 = __SMLAD(g00 | (g01 << 16), y_frac2, FRAC_VAL / 2) >> FRAC_BITS; // combine
+                    b00 = __SMLAD(b00, x_frac2, FRAC_VAL / 2) >> FRAC_BITS;               // top line
+                    b01 = __SMLAD(b01, x_frac2, FRAC_VAL / 2) >> FRAC_BITS;               // bottom line
+                    b00 = __SMLAD(b00 | (b01 << 16), y_frac2, FRAC_VAL / 2) >> FRAC_BITS; // combine
+                }
+#else  // generic C code
+                    {
+                        r00 = (p00 & r_mask) >> 1;
+                        g00 = p00 & g_mask;
+                        b00 = p00 & b_mask;
+                        r10 = (p10 & r_mask) >> 1;
+                        g10 = p10 & g_mask;
+                        b10 = p10 & b_mask;
+                        r01 = (p01 & r_mask) >> 1;
+                        g01 = p01 & g_mask;
+                        b01 = p01 & b_mask;
+                        r11 = (p11 & r_mask) >> 1;
+                        g11 = p11 & g_mask;
+                        b11 = p11 & b_mask;
+                        r00 = ((r00 * nx_frac) + (r10 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // top line
+                        r01 = ((r01 * nx_frac) + (r11 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // bottom line
+                        r00 = ((r00 * ny_frac) + (r01 * y_frac) + FRAC_VAL / 2) >> FRAC_BITS; // combine top + bottom
+                        g00 = ((g00 * nx_frac) + (g10 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // top line
+                        g01 = ((g01 * nx_frac) + (g11 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // bottom line
+                        g00 = ((g00 * ny_frac) + (g01 * y_frac) + FRAC_VAL / 2) >> FRAC_BITS; // combine top + bottom
+                        b00 = ((b00 * nx_frac) + (b10 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // top line
+                        b01 = ((b01 * nx_frac) + (b11 * x_frac) + FRAC_VAL / 2) >> FRAC_BITS; // bottom line
+                        b00 = ((b00 * ny_frac) + (b01 * y_frac) + FRAC_VAL / 2) >> FRAC_BITS; // combine top + bottom
+                    }
+#endif // Cortex-M4/M7
+                r00 = (r00 << 1) & r_mask;
+                g00 = g00 & g_mask;
+                b00 = b00 & b_mask;
+                p00 = (r00 | g00 | b00);                   // re-combine color components
+                *d16++ = (uint16_t)__builtin_bswap16(p00); // store new pixel
+            } // for x
         } // 16-bpp
     } // for y
 } /* resizeImage() */
@@ -540,62 +601,77 @@ void cropImage(int srcWidth, int srcHeight, uint8_t *srcImage, int startX, int s
     int x, y;
 
     if (startX < 0 || startX >= srcWidth || startY < 0 || startY >= srcHeight || (startX + dstWidth) > srcWidth || (startY + dstHeight) > srcHeight)
-       return; // invalid parameters
+        return; // invalid parameters
     if (iBpp != 8 && iBpp != 16)
-       return;
+        return;
 
-    if (iBpp == 8) {
-      uint8_t *s, *d;
-      for (y=0; y<dstHeight; y++) {
-        s = &srcImage[srcWidth * (y + startY) + startX];
-        d = &dstImage[(dstWidth * y)];
-        x = 0;
-        if ((intptr_t)s & 3 || (intptr_t)d & 3) { // either src or dst pointer is not aligned
-          for (; x<dstWidth; x++) {
-            *d++ = *s++; // have to do it byte-by-byte
-          }
-        } else {
-          // move 4 bytes at a time if aligned or alignment not enforced
-          s32 = (uint32_t *)s;
-          d32 = (uint32_t *)d;
-          for (; x<dstWidth-3; x+= 4) {
-            *d32++ = *s32++;
-          }
-          // any remaining stragglers?
-          s = (uint8_t *)s32;
-          d = (uint8_t *)d32;
-          for (; x<dstWidth; x++) {
-            *d++ = *s++;
-          }
-        }
-      } // for y
+    if (iBpp == 8)
+    {
+        uint8_t *s, *d;
+        for (y = 0; y < dstHeight; y++)
+        {
+            s = &srcImage[srcWidth * (y + startY) + startX];
+            d = &dstImage[(dstWidth * y)];
+            x = 0;
+            if ((intptr_t)s & 3 || (intptr_t)d & 3)
+            { // either src or dst pointer is not aligned
+                for (; x < dstWidth; x++)
+                {
+                    *d++ = *s++; // have to do it byte-by-byte
+                }
+            }
+            else
+            {
+                // move 4 bytes at a time if aligned or alignment not enforced
+                s32 = (uint32_t *)s;
+                d32 = (uint32_t *)d;
+                for (; x < dstWidth - 3; x += 4)
+                {
+                    *d32++ = *s32++;
+                }
+                // any remaining stragglers?
+                s = (uint8_t *)s32;
+                d = (uint8_t *)d32;
+                for (; x < dstWidth; x++)
+                {
+                    *d++ = *s++;
+                }
+            }
+        } // for y
     } // 8-bpp
     else
     {
-      uint16_t *s, *d;
-      for (y=0; y<dstHeight; y++) {
-        s = (uint16_t *)&srcImage[2 * srcWidth * (y + startY) + startX * 2];
-        d = (uint16_t *)&dstImage[(dstWidth * y * 2)];
-        x = 0;
-        if ((intptr_t)s & 2 || (intptr_t)d & 2) { // either src or dst pointer is not aligned
-          for (; x<dstWidth; x++) {
-            *d++ = *s++; // have to do it 16-bits at a time
-          }
-        } else {
-          // move 4 bytes at a time if aligned or alignment no enforced
-          s32 = (uint32_t *)s;
-          d32 = (uint32_t *)d;
-          for (; x<dstWidth-1; x+= 2) { // we can move 2 pixels at a time
-            *d32++ = *s32++;
-          }
-          // any remaining stragglers?
-          s = (uint16_t *)s32;
-          d = (uint16_t *)d32;
-          for (; x<dstWidth; x++) {
-            *d++ = *s++;
-          }
-        }
-      } // for y
+        uint16_t *s, *d;
+        for (y = 0; y < dstHeight; y++)
+        {
+            s = (uint16_t *)&srcImage[2 * srcWidth * (y + startY) + startX * 2];
+            d = (uint16_t *)&dstImage[(dstWidth * y * 2)];
+            x = 0;
+            if ((intptr_t)s & 2 || (intptr_t)d & 2)
+            { // either src or dst pointer is not aligned
+                for (; x < dstWidth; x++)
+                {
+                    *d++ = *s++; // have to do it 16-bits at a time
+                }
+            }
+            else
+            {
+                // move 4 bytes at a time if aligned or alignment no enforced
+                s32 = (uint32_t *)s;
+                d32 = (uint32_t *)d;
+                for (; x < dstWidth - 1; x += 2)
+                { // we can move 2 pixels at a time
+                    *d32++ = *s32++;
+                }
+                // any remaining stragglers?
+                s = (uint16_t *)s32;
+                d = (uint16_t *)d32;
+                for (; x < dstWidth; x++)
+                {
+                    *d++ = *s++;
+                }
+            }
+        } // for y
     } // 16-bpp case
 } /* cropImage() */
 
@@ -632,7 +708,7 @@ int OV7675::begin(int resolution, int format, int fps)
 
     // init driver to use full image sensor size
     bool ret = OV767X::begin(VGA, format, fps);
-    width = OV767X::width(); // full sensor width
+    width = OV767X::width();   // full sensor width
     height = OV767X::height(); // full sensor height
     bytes_per_pixel = OV767X::bytesPerPixel();
     bytes_per_row = width * bytes_per_pixel; // each pixel is 2 bytes
@@ -641,35 +717,36 @@ int OV7675::begin(int resolution, int format, int fps)
     buf_mem = NULL;
     raw_buf = NULL;
     intrp_buf = NULL;
-    //allocate_scratch_buffs();
+    // allocate_scratch_buffs();
 
     return ret;
 } /* OV7675::begin() */
 
 int OV7675::allocate_scratch_buffs()
 {
-    //ei_printf("allocating buffers..\r\n");
+    // ei_printf("allocating buffers..\r\n");
     buf_rows = height / resize_row_sz * resize_height;
     buf_size = bytes_per_row * buf_rows;
 
     buf_mem = ei_malloc(buf_size);
-    if(buf_mem == NULL) {
+    if (buf_mem == NULL)
+    {
         ei_printf("failed to create buf_mem\r\n");
         return false;
     }
     raw_buf = (uint8_t *)DWORD_ALIGN_PTR((uintptr_t)buf_mem);
 
-    //ei_printf("allocating buffers OK\r\n");
+    // ei_printf("allocating buffers OK\r\n");
     return 0;
 }
 
 int OV7675::deallocate_scratch_buffs()
 {
-    //ei_printf("deallocating buffers...\r\n");
+    // ei_printf("deallocating buffers...\r\n");
     ei_free(buf_mem);
     buf_mem = NULL;
 
-    //ei_printf("deallocating buffers OK\r\n");
+    // ei_printf("deallocating buffers OK\r\n");
     return 0;
 }
 
@@ -682,19 +759,22 @@ int OV7675::deallocate_scratch_buffs()
 // Nano we bring in only part of the entire sensor at a time and then
 // interpolate to a lower resolution.
 //
-void OV7675::readFrame(void* buffer)
+void OV7675::readFrame(void *buffer)
 {
     allocate_scratch_buffs();
 
-    uint8_t* out = (uint8_t*)buffer;
+    uint8_t *out = (uint8_t *)buffer;
     noInterrupts();
 
     // Falling edge indicates start of frame
-    while ((*vsyncPort & vsyncMask) == 0); // wait for HIGH
-    while ((*vsyncPort & vsyncMask) != 0); // wait for LOW
+    while ((*vsyncPort & vsyncMask) == 0)
+        ; // wait for HIGH
+    while ((*vsyncPort & vsyncMask) != 0)
+        ; // wait for LOW
 
     int out_row = 0;
-    for (int raw_height = 0; raw_height < height; raw_height += buf_rows) {
+    for (int raw_height = 0; raw_height < height; raw_height += buf_rows)
+    {
         // read in 640xbuf_rows buffer to work with
         readBuf();
 
@@ -723,29 +803,35 @@ void OV7675::readBuf()
     int offset = 0;
 
     uint32_t ulPin = 33; // P1.xx set of GPIO is in 'pin' 32 and above
-    NRF_GPIO_Type * port;
+    NRF_GPIO_Type *port;
 
     port = nrf_gpio_pin_port_decode(&ulPin);
 
-    for (int i = 0; i < buf_rows; i++) {
+    for (int i = 0; i < buf_rows; i++)
+    {
         // rising edge indicates start of line
-        while ((*hrefPort & hrefMask) == 0); // wait for HIGH
+        while ((*hrefPort & hrefMask) == 0)
+            ; // wait for HIGH
 
-        for (int col = 0; col < bytes_per_row; col++) {
+        for (int col = 0; col < bytes_per_row; col++)
+        {
             // rising edges clock each data byte
-            while ((*pclkPort & pclkMask) != 0); // wait for LOW
+            while ((*pclkPort & pclkMask) != 0)
+                ; // wait for LOW
 
             uint32_t in = port->IN; // read all bits in parallel
 
-            in >>= 2; // place bits 0 and 1 at the "bottom" of the register
-            in &= 0x3f03; // isolate the 8 bits we care about
+            in >>= 2;        // place bits 0 and 1 at the "bottom" of the register
+            in &= 0x3f03;    // isolate the 8 bits we care about
             in |= (in >> 6); // combine the upper 6 and lower 2 bits
 
             raw_buf[offset++] = in;
 
-            while ((*pclkPort & pclkMask) == 0); // wait for HIGH
+            while ((*pclkPort & pclkMask) == 0)
+                ; // wait for HIGH
         }
 
-        while ((*hrefPort & hrefMask) != 0); // wait for LOW
+        while ((*hrefPort & hrefMask) != 0)
+            ; // wait for LOW
     }
 } /* OV7675::readBuf() */
