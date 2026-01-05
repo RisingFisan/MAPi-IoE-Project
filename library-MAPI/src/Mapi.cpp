@@ -17,7 +17,6 @@ Mapi::Mapi(int lightSensorPin, int tempHumSensorPin, int carbonMonoxideSensorPin
     _wifiClient = nullptr;
     _mqttClient = nullptr;
     _mqttPort = 1883;
-    _peopleCountSerial = nullptr;
     _lastPeopleCount = -1;
 }
 
@@ -166,26 +165,64 @@ int Mapi::readCarbonMonoxide()
     return pct;
 }
 
-void Mapi::beginPeopleCount(Stream *serial)
+void Mapi::beginPeopleCountBLE()
 {
-    _peopleCountSerial = serial;
+    if (!BLE.begin()) {
+        Serial.println("starting BLE failed!");
+        return;
+    }
+    Serial.println("BLE Central - People Count");
+    BLE.scanForUuid("19B10000-E8F2-537E-4F6C-D104768A1214");
+}
+
+void Mapi::updatePeopleCountBLE()
+{
+    // Check if connected
+    if (_peripheral && _peripheral.connected()) {
+        if (_countCharacteristic.valueUpdated()) {
+            int32_t value = 0;
+            _countCharacteristic.readValue(value);
+            _lastPeopleCount = value;
+        }
+        return;
+    }
+
+    // If we were connected but lost it, restart scan
+    if (_peripheral && !_peripheral.connected()) {
+        _peripheral = BLEDevice(); // Clear
+        BLE.scanForUuid("19B10000-E8F2-537E-4F6C-D104768A1214");
+    }
+
+    // Check for new devices
+    BLEDevice peripheral = BLE.available();
+    if (peripheral) {
+        if (peripheral.localName() == "PeopleCountDevice") {
+            BLE.stopScan();
+            if (peripheral.connect()) {
+                if (peripheral.discoverAttributes()) {
+                    _countCharacteristic = peripheral.characteristic("19B10001-E8F2-537E-4F6C-D104768A1214");
+                    if (_countCharacteristic) {
+                        _peripheral = peripheral;
+                        if (_countCharacteristic.canSubscribe()) {
+                            _countCharacteristic.subscribe();
+                        }
+                    } else {
+                        peripheral.disconnect();
+                        BLE.scanForUuid("19B10000-E8F2-537E-4F6C-D104768A1214");
+                    }
+                } else {
+                    peripheral.disconnect();
+                    BLE.scanForUuid("19B10000-E8F2-537E-4F6C-D104768A1214");
+                }
+            } else {
+                BLE.scanForUuid("19B10000-E8F2-537E-4F6C-D104768A1214");
+            }
+        }
+    }
 }
 
 int Mapi::readPeopleCount()
 {
-    if (!_peopleCountSerial)
-        return -1;
-
-    while (_peopleCountSerial->available())
-    {
-        String line = _peopleCountSerial->readStringUntil('\n');
-        line.trim();
-        if (line.startsWith("DATA:"))
-        {
-            String countStr = line.substring(5);
-            _lastPeopleCount = countStr.toInt();
-        }
-    }
     return _lastPeopleCount;
 }
 

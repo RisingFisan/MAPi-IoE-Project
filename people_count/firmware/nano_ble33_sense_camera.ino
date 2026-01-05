@@ -1,6 +1,7 @@
 /* Includes ---------------------------------------------------------------- */
 #include <Person_Detection_inferencing.h>
 #include <Arduino_OV767X.h> //Click here to get the library: https://www.arduino.cc/reference/en/libraries/arduino_ov767x/
+#include <ArduinoBLE.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -92,9 +93,9 @@ char ei_get_serial_byte(void)
 static OV7675 Cam;
 static bool is_initialised = false;
 
-// Define SoftwareSerial-like interface using hardware UART on D11 (RX) and D12 (TX)
-// Note: D11 is RX, D12 is TX in this configuration to match SoftwareSerial(rx, tx) convention
-UART softSerial(digitalPinToPinName(12), digitalPinToPinName(11), NC, NC);
+// BLE Service and Characteristic
+BLEService peopleCountService("19B10000-E8F2-537E-4F6C-D104768A1214");
+BLEIntCharacteristic countCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLENotify);
 
 /*
 ** @brief points to the output of the capture
@@ -126,10 +127,23 @@ void setup()
 {
     // put your setup code here, to run once:
     Serial.begin(115200);
-    softSerial.begin(9600);
+    
     // comment out the below line to cancel the wait for USB connection (needed for native USB)
-    while (!Serial)
-        ;
+    // while (!Serial);
+
+    if (!BLE.begin()) {
+        Serial.println("starting BLE failed!");
+        while (1);
+    }
+
+    BLE.setLocalName("PeopleCountDevice");
+    BLE.setAdvertisedService(peopleCountService);
+    peopleCountService.addCharacteristic(countCharacteristic);
+    BLE.addService(peopleCountService);
+    countCharacteristic.writeValue(0);
+    BLE.advertise();
+
+    Serial.println("BLE People Count Peripheral");
 
     // summary of inferencing settings (from model_metadata.h)
     ei_printf("Inferencing settings:\n");
@@ -239,9 +253,14 @@ void loop()
         // Update history with the filtered count
         count_history[history_index] = valid_people_count;
         history_index = (history_index + 1) % HISTORY_SIZE;
-
-        int sum = 0;
-        for (int i = 0; i < HISTORY_SIZE; i++)
+Update BLE characteristic
+        BLEDevice central = BLE.central();
+        if (central && central.connected()) {
+            countCharacteristic.writeValue(smoothed_count);
+        } else {
+             // Update anyway so it's ready when read
+             countCharacteristic.writeValue(smoothed_count);
+        }++)
         {
             sum += count_history[i];
         }

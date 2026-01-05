@@ -12,6 +12,7 @@
 // Include the board-specific WiFi header directly.
 #include <WiFiS3.h>
 #include <ArduinoMqttClient.h>
+#include <ArduinoBLE.h>
 
 class DHT11; // forward declaration to avoid requiring DHT11 in header
 
@@ -82,10 +83,13 @@ public:
   // Read carbon monoxide sensor as percentage (0-100)
   int readCarbonMonoxide();
 
-  // Initialize people count sensor with a Serial stream (e.g. &Serial1)
-  void beginPeopleCount(Stream *serial);
+  // Initialize people count sensor with BLE
+  void beginPeopleCountBLE();
 
-  // Read people count from the configured serial stream
+  // Update BLE connection and read data (call in loop)
+  void updatePeopleCountBLE();
+
+  // Read people count from the configured source
   // Returns the last valid count, or -1 if not available/configured
   int readPeopleCount();
 
@@ -95,8 +99,9 @@ private:
   int _carbonMonoxideSensorPin;
 
   // People count
-  Stream *_peopleCountSerial;
   int _lastPeopleCount;
+  BLEDevice _peripheral;
+  BLECharacteristic _countCharacteristic;
 
   // DHT11 instance created in begin()
   DHT11 *_dht;

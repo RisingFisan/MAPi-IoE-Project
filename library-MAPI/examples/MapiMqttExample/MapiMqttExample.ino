@@ -54,7 +54,7 @@ bool DUMMY = true;
 void setup()
 {
     Serial.begin(9600);
-    Serial1.begin(9600); // Initialize Serial1 for people count sensor
+    // Serial1.begin(9600); // Initialize Serial1 for people count sensor
     while (!Serial)
     {
         ; // Wait for serial port to connect (needed for native USB)
@@ -66,7 +66,7 @@ void setup()
 
     // Initialize sensors
     sensors.begin();
-    sensors.beginPeopleCount(&Serial1); // Register Serial1 for people count
+    sensors.beginPeopleCountBLE(); // Register BLE for people count
     delay(1000);
 
     // ==================== Connect to WiFi ====================
@@ -120,6 +120,7 @@ void loop()
 {
     // Maintain MQTT connection
     sensors.mqttLoop();
+    sensors.updatePeopleCountBLE();
 
     // Check if we need to reconnect to MQTT
     if (!sensors.mqttConnected())

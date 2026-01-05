@@ -17,9 +17,9 @@ Mapi sensors(LIGHT_PIN, DHT_PIN, CO_PIN);
 void setup()
 {
     Serial.begin(9600);
-    Serial1.begin(9600); // Initialize Serial1 for people count sensor
+    // Serial1.begin(9600); // Initialize Serial1 for people count sensor
     sensors.begin();
-    sensors.beginPeopleCount(&Serial1); // Register Serial1 for people count
+    sensors.beginPeopleCountBLE(); // Register BLE for people count
     delay(1000);
     Serial.println("Mapi example started");
 
@@ -49,6 +49,8 @@ void setup()
 
 void loop()
 {
+    sensors.updatePeopleCountBLE();
+
     // Read light
     float lightPct = sensors.lightSensor();
     Serial.print("Light: ");
